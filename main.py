@@ -1,15 +1,27 @@
 import ipaddress
 
-def format_subnet_bitmap(subnet_mask, subnet_bits):
+
+def format_subnet_bitmap(network_class, subnet_mask, subnet_bits):
     subnet_mask = int(subnet_mask)  # Convert subnet_mask to an integer
     formatted_subnet_bitmap = format(subnet_mask, '032b')
-    nnn_bits = formatted_subnet_bitmap[:subnet_bits].replace('1', 'n')
-    hhh_bits = formatted_subnet_bitmap[subnet_bits:].replace('0', 'h')
+    nnn_bits = formatted_subnet_bitmap[:subnet_bits].replace('1', 'n').replace('0','h')
+    hhh_bits = formatted_subnet_bitmap[subnet_bits:].replace('0', 'h').replace('1', 'n')
 
-    formatted_bitmap = nnn_bits + hhh_bits
-    formatted_bitmap_with_dots = '.'.join([formatted_bitmap[i:i+8] for i in range(0, len(formatted_bitmap), 8)])
+    if network_class == 'A':
+        class_number = '0'
+    elif network_class == 'B':
+        class_number = '10'
+    elif network_class == 'C':
+        class_number = '110'
+    else:
+        class_number = '??'  # Unknown class
+
+    # Replace the first 3 characters in nnn_bits with "110"
+    nnn_bits = nnn_bits[len(class_number):]
+
+    formatted_bitmap = class_number + nnn_bits + hhh_bits
+    formatted_bitmap_with_dots = '.'.join([formatted_bitmap[i:i + 8] for i in range(0, len(formatted_bitmap), 8)])
     return formatted_bitmap_with_dots
-
 def calculate_subnet_info(network_class, ip_address, subnet_bits, max_subnets, mask_bits, hosts_per_subnet):
     network_class = network_class.upper()
     ip_address = ipaddress.IPv4Address(ip_address)
@@ -36,7 +48,7 @@ def calculate_subnet_info(network_class, ip_address, subnet_bits, max_subnets, m
     subnet_id = ipaddress.IPv4Address(network_address)
     broadcast_address = ipaddress.IPv4Address(network_address + subnet_range - 1)
     host_address_range = (subnet_id + 1, broadcast_address - 1)
-    subnet_bitmap = format_subnet_bitmap(subnet_mask, subnet_bits)
+    subnet_bitmap = format_subnet_bitmap(network_class,subnet_mask, subnet_bits)
 
     print(f"Network Class: {network_class}")
     print(f"IP Address: {ip_address}")
